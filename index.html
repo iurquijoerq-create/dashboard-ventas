@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard · Ventas E-Commerce</title>
+
+  <!-- Librerías externas (no tocar) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+
+  <style>
+    /* =========================================================
+       ESTILOS GENERALES
+       ========================================================= */
+    body {
+      background: #0d0f14;
+      color: #e8ecf5;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+
+    /* ── Cabecera ── */
+    header {
+      background: #161a24;
+      border: 1px solid #252b3b;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    header h1 { font-size: 1.6rem; margin: 0 0 6px; }
+    header p  { color: #7a849e; margin: 0 0 16px; font-size: 0.9rem; }
+
+    /* ── Autores ── */
+    .autores { display: flex; gap: 12px; flex-wrap: wrap; }
+    .autor {
+      background: #1e2535;
+      border: 1px solid #2e3a50;
+      border-radius: 30px;
+      padding: 6px 16px;
+      font-size: 0.85rem;
+    }
+    .autor span { color: #4f8ef7; }
+
+    /* ── KPIs ── */
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .kpi {
+      background: #161a24;
+      border: 1px solid #252b3b;
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+    }
+    .kpi .label { font-size: 0.75rem; color: #7a849e; text-transform: uppercase; }
+    .kpi .valor { font-size: 1.6rem; font-weight: bold; margin-top: 4px; }
+
+    /* ── Grid de gráficos ── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr; /* 2 columnas */
+      gap: 20px;
+    }
+    .card-ancha { grid-column: span 2; } /* ocupa las 2 columnas */
+
+    /* ── Tarjeta de gráfico ── */
+    .card {
+      background: #161a24;
+      border: 1px solid #252b3b;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h2 { font-size: 1rem; margin: 0 0 4px; }
+    .card .meta { font-size: 0.75rem; color: #7a849e; margin-bottom: 16px; }
+    .card .meta span {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      border: 1px solid #2e3a50;
+      margin-right: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- =========================================================
+     CABECERA CON AUTORES
+     ========================================================= -->
+<header>
+  <h1>Análisis de Ventas E-Commerce</h1>
+  <p>Datos 2024–2026 · Canvas, SVG, Chart.js, D3.js</p>
+
+  <div class="autores">
+    <div class="autor">Irene Urquijo Erquicia · <span>@iurquijoerq</span></div>
+  </div>
+</header>
+
+<!-- =========================================================
+     KPIs (resumen numérico en la parte superior)
+     ========================================================= -->
+<div class="kpis">
+  <div class="kpi"><div class="label">Ventas totales</div><div class="valor" id="kpi-total">–</div></div>
+  <div class="kpi"><div class="label">Clientes</div><div class="valor" id="kpi-clientes">–</div></div>
+  <div class="kpi"><div class="label">Categorías</div><div class="valor" id="kpi-cats">–</div></div>
+  <div class="kpi"><div class="label">Top producto</div><div class="valor" id="kpi-top">–</div></div>
+</div>
+
+<!-- =========================================================
+     GRID DE GRÁFICOS
+     ========================================================= -->
+<div class="grid">
+
+  <!-- Gráfico 1: Canvas -->
+  <div class="card">
+    <h2>Ventas por Categoría</h2>
+    <div class="meta">
+      <span>Canvas · JS</span>
+      <span>@iurquijoerq</span>
+    </div>
+    <canvas id="canvas-barras" height="260"></canvas>
+  </div>
+
+  <!-- Gráfico 2: SVG -->
+  <div class="card">
+    <h2>Clientes por Género</h2>
+    <div class="meta">
+      <span>SVG · JS</span>
+      <span>@iurquijoerq</span>
+    </div>
+    <svg id="svg-donut" width="100%" height="280"></svg>
+  </div>
+
+  <!-- Gráfico 3: Chart.js (ancho completo) -->
+  <div class="card card-ancha">
+    <h2>Top 5 Productos por Ingresos</h2>
+    <div class="meta">
+      <span>Chart.js</span>
+      <span>@iurquijoerq</span>
+    </div>
+    <div style="height: 240px;">
+      <canvas id="chartjs-barras"></canvas>
+    </div>
+  </div>
+
+  <!-- Gráfico 4: D3.js (ancho completo) -->
+  <div class="card card-ancha">
+    <h2>Tendencia de Pedidos Diarios</h2>
+    <div class="meta">
+      <span>D3.js</span>
+      <span>@iurquijoerq</span>
+    </div>
+    <svg id="d3-linea" style="width:100%; height:300px;"></svg>
+  </div>
+
+</div><!-- /grid -->
+
+
+<!-- =========================================================
+     JAVASCRIPT
+     ========================================================= -->
+<script>
+
+/* =========================================================
+   DATOS
+   Aquí puedes cambiar los valores, añadir o quitar filas.
+   ========================================================= */
+
+// Ventas por categoría (gráfico Canvas y KPIs)
+const datosVentas = [
+  { categoria: "Alimentación", ventas: 32147 },
+  { categoria: "Belleza",      ventas: 76265 },
+  { categoria: "Deportes",     ventas: 72657 },
+  { categoria: "Electrónica",  ventas: 1494990 },
+  { categoria: "Hogar",        ventas: 254999 },
+  { categoria: "Juguetes",     ventas: 131024 },
+  { categoria: "Videojuegos",  ventas: 288390 }
+];
+
+// Clientes por género (gráfico SVG)
+const datosGenero = [
+  { genero: "Hombre", total: 866 },
+  { genero: "Mujer",  total: 943 }
+];
+
+// Top 5 productos (gráfico Chart.js)
+const datosTop = [
+  { nombre: "Watch Ultra 3 GPS",         valor: 42369 },
+  { nombre: "OmniBook 5 OLED",           valor: 35781 },
+  { nombre: "Apple iPad Pro 13″ (M5)",   valor: 32047 },
+  { nombre: "Watch Series 11",           valor: 30517 },
+  { nombre: "HP 15 FHD Ryzen 7",         valor: 29910 }
+];
+
+// Tendencia de pedidos diarios (gráfico D3)
+// Solo usamos los últimos 3 meses para que sea más legible
+const datosTendencia = [
+  {"Date":"2026-01-01","count":15},{"Date":"2026-01-02","count":10},{"Date":"2026-01-03","count":12},{"Date":"2026-01-04","count":7},{"Date":"2026-01-05","count":71},{"Date":"2026-01-06","count":55},{"Date":"2026-01-07","count":40},{"Date":"2026-01-08","count":42},{"Date":"2026-01-09","count":18},{"Date":"2026-01-10","count":8},{"Date":"2026-01-11","count":11},{"Date":"2026-01-12","count":12},{"Date":"2026-01-13","count":10},{"Date":"2026-01-14","count":12},{"Date":"2026-01-15","count":12},{"Date":"2026-01-16","count":14},{"Date":"2026-01-17","count":13},{"Date":"2026-01-18","count":17},{"Date":"2026-01-19","count":13},{"Date":"2026-01-20","count":17},{"Date":"2026-01-21","count":10},{"Date":"2026-01-22","count":10},{"Date":"2026-01-23","count":12},{"Date":"2026-01-24","count":10},{"Date":"2026-01-25","count":11},{"Date":"2026-01-26","count":14},{"Date":"2026-01-27","count":10},{"Date":"2026-01-28","count":8},{"Date":"2026-01-29","count":15},{"Date":"2026-01-30","count":11},{"Date":"2026-01-31","count":13},
+  {"Date":"2026-02-01","count":13},{"Date":"2026-02-02","count":21},{"Date":"2026-02-03","count":14},{"Date":"2026-02-04","count":17},{"Date":"2026-02-05","count":8},{"Date":"2026-02-06","count":11},{"Date":"2026-02-07","count":13},{"Date":"2026-02-08","count":21},{"Date":"2026-02-09","count":10},{"Date":"2026-02-10","count":11},{"Date":"2026-02-11","count":14},{"Date":"2026-02-12","count":9},{"Date":"2026-02-13","count":11},{"Date":"2026-02-14","count":4},{"Date":"2026-02-15","count":11},{"Date":"2026-02-16","count":18},{"Date":"2026-02-17","count":11},{"Date":"2026-02-18","count":11},{"Date":"2026-02-19","count":17},{"Date":"2026-02-20","count":10},{"Date":"2026-02-21","count":13},{"Date":"2026-02-22","count":17},{"Date":"2026-02-23","count":17},{"Date":"2026-02-24","count":14},{"Date":"2026-02-25","count":8},{"Date":"2026-02-26","count":20},{"Date":"2026-02-27","count":9},{"Date":"2026-02-28","count":18},
+  {"Date":"2026-03-01","count":13},{"Date":"2026-03-02","count":16},{"Date":"2026-03-03","count":11},{"Date":"2026-03-04","count":6},{"Date":"2026-03-05","count":15},{"Date":"2026-03-06","count":15},{"Date":"2026-03-07","count":5},{"Date":"2026-03-08","count":12},{"Date":"2026-03-09","count":6},{"Date":"2026-03-10","count":9},{"Date":"2026-03-11","count":12},{"Date":"2026-03-12","count":11},{"Date":"2026-03-13","count":13},{"Date":"2026-03-14","count":15},{"Date":"2026-03-15","count":13},{"Date":"2026-03-16","count":16},{"Date":"2026-03-17","count":11},{"Date":"2026-03-18","count":10},{"Date":"2026-03-19","count":14}
+];
+
+/* =========================================================
+   COLORES
+   Cambia estos valores para cambiar los colores de todos
+   los gráficos a la vez.
+   ========================================================= */
+const COLORES = [
+  "#4f8ef7", // azul
+  "#f7c94f", // amarillo
+  "#4ff7a8", // verde
+  "#f74f7c", // rosa
+  "#a64ff7", // morado
+  "#f7824f", // naranja
+  "#4ff7e8"  // cian
+];
+
+
+/* =========================================================
+   FUNCIÓN AUXILIAR: formatear números como euros
+   ========================================================= */
+function formatEuros(valor) {
+  if (valor >= 1000000) return (valor / 1000000).toFixed(2) + "M€";
+  if (valor >= 1000)    return (valor / 1000).toFixed(1) + "K€";
+  return valor + "€";
+}
+
+
+/* =========================================================
+   KPIs
+   ========================================================= */
+function dibujarKPIs() {
+  const totalVentas = datosVentas.reduce((suma, d) => suma + d.ventas, 0);
+  const totalClientes = datosGenero.reduce((suma, d) => suma + d.total, 0);
+
+  document.getElementById("kpi-total").textContent    = formatEuros(totalVentas);
+  document.getElementById("kpi-clientes").textContent = totalClientes;
+  document.getElementById("kpi-cats").textContent     = datosVentas.length;
+  document.getElementById("kpi-top").textContent      = formatEuros(datosTop[0].valor);
+}
+
+
+/* =========================================================
+   GRÁFICO 1: CANVAS — Barras verticales
+   ========================================================= */
+function dibujarCanvasBarras() {
+  const canvas = document.getElementById("canvas-barras");
+  const ctx    = canvas.getContext("2d");
+
+  // Dimensiones y márgenes
+  const W   = 1000;
+  const H   = 260;
+  canvas.width  = W;
+  canvas.height = H;
+  const margen = { top: 20, right: 10, bottom: 50, left: 55 };
+
+  const anchoGrafico = W - margen.left - margen.right;
+  const altoGrafico  = H - margen.top  - margen.bottom;
+
+  const maxValor = Math.max(...datosVentas.map(d => d.ventas));
+  const n        = datosVentas.length;
+  const anchoBarra = anchoGrafico / n - 8; // 8px de hueco entre barras
+
+  // Líneas horizontales de referencia
+  ctx.strokeStyle = "#252b3b";
+  ctx.fillStyle   = "#7a849e";
+  ctx.font        = "11px Arial";
+  ctx.textAlign   = "right";
+  for (let i = 0; i <= 4; i++) {
+    const valor = (maxValor / 4) * i;
+    const y     = margen.top + altoGrafico - (valor / maxValor) * altoGrafico;
+    ctx.beginPath();
+    ctx.moveTo(margen.left, y);
+    ctx.lineTo(margen.left + anchoGrafico, y);
+    ctx.stroke();
+    ctx.fillText(formatEuros(valor), margen.left - 6, y + 4);
+  }
+
+  // Dibujar cada barra
+  datosVentas.forEach((d, i) => {
+    const x      = margen.left + i * (anchoBarra + 8);
+    const altura = (d.ventas / maxValor) * altoGrafico;
+    const y      = margen.top + altoGrafico - altura;
+    const color  = COLORES[i % COLORES.length]; // color del array COLORES
+
+    // Relleno de la barra
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(x, y, anchoBarra, altura, 5);
+    ctx.fill();
+
+    // Etiqueta debajo de la barra
+    ctx.fillStyle   = "#7a849e";
+    ctx.font        = "10px Arial";
+    ctx.textAlign   = "center";
+    ctx.fillText(d.categoria, x + anchoBarra / 2, margen.top + altoGrafico + 16);
+  });
+}
+
+
+/* =========================================================
+   GRÁFICO 2: SVG — Donut de género
+   ========================================================= */
+function dibujarSVGDonut() {
+  const svg    = document.getElementById("svg-donut");
+  const W      = svg.clientWidth || 400;
+  const H      = 280;
+  const cx     = W / 2;       // centro X
+  const cy     = H / 2 - 10;  // centro Y
+  const R      = 90;           // radio exterior
+  const r      = 50;           // radio interior (hueco)
+
+  // Colores del donut — EDITAR aquí para cambiar colores
+  const coloresDonut = ["#4f8ef7", "#f74f7c"];
+
+  const total = datosGenero.reduce((s, d) => s + d.total, 0);
+  let anguloInicio = -Math.PI / 2; // empezar desde arriba
+  let html = "";
+
+  datosGenero.forEach((d, i) => {
+    const angulo    = (d.total / total) * 2 * Math.PI; // ángulo proporcional
+    const anguloFin = anguloInicio + angulo;
+    const grande    = angulo > Math.PI ? 1 : 0; // arco grande o pequeño
+
+    // Coordenadas del arco exterior
+    const x1 = cx + R * Math.cos(anguloInicio);
+    const y1 = cy + R * Math.sin(anguloInicio);
+    const x2 = cx + R * Math.cos(anguloFin);
+    const y2 = cy + R * Math.sin(anguloFin);
+
+    // Coordenadas del arco interior (hueco)
+    const ix1 = cx + r * Math.cos(anguloInicio);
+    const iy1 = cy + r * Math.sin(anguloInicio);
+    const ix2 = cx + r * Math.cos(anguloFin);
+    const iy2 = cy + r * Math.sin(anguloFin);
+
+    // Ruta SVG: arco exterior → línea al interior → arco interior (al revés)
+    const ruta = `M ${x1} ${y1} A ${R} ${R} 0 ${grande} 1 ${x2} ${y2}
+                  L ${ix2} ${iy2} A ${r} ${r} 0 ${grande} 0 ${ix1} ${iy1} Z`;
+
+    html += `<path d="${ruta}" fill="${coloresDonut[i]}" opacity="0.9"/>`;
+
+    anguloInicio = anguloFin;
+  });
+
+  // Texto central
+  html += `<text x="${cx}" y="${cy - 5}" text-anchor="middle" fill="#e8ecf5"
+             font-size="26" font-weight="bold">${total}</text>`;
+  html += `<text x="${cx}" y="${cy + 16}" text-anchor="middle" fill="#7a849e"
+             font-size="11">clientes</text>`;
+
+  // Leyenda debajo
+  datosGenero.forEach((d, i) => {
+    const ly  = cy + R + 25 + i * 22;
+    const pct = ((d.total / total) * 100).toFixed(1);
+    html += `<rect x="${cx - 70}" y="${ly - 9}" width="11" height="11" rx="3" fill="${coloresDonut[i]}"/>`;
+    html += `<text x="${cx - 54}" y="${ly}" fill="#e8ecf5" font-size="12">${d.genero} — ${d.total} (${pct}%)</text>`;
+  });
+
+  svg.innerHTML = html;
+}
+
+
+/* =========================================================
+   GRÁFICO 3: CHART.JS — Barras horizontales
+   ========================================================= */
+function dibujarChartJSBarras() {
+  const ctx = document.getElementById("chartjs-barras").getContext("2d");
+
+  new Chart(ctx, {
+    // EDITAR: cambia "bar" por "line", "pie", "doughnut", "radar"...
+    type: "bar",
+
+    data: {
+      labels: datosTop.map(d => d.nombre), // etiquetas del eje
+      datasets: [{
+        label: "Ingresos (€)",
+        data: datosTop.map(d => d.valor),  // valores
+
+        // EDITAR: colores de las barras
+        backgroundColor: COLORES.slice(0, datosTop.length).map(c => c + "bb"),
+        borderColor:     COLORES.slice(0, datosTop.length),
+        borderWidth: 1,
+        borderRadius: 6,
+      }]
+    },
+
+    options: {
+      // "y" → barras horizontales | "x" → barras verticales (por defecto)
+      indexAxis: "y",
+
+      responsive: true,
+      maintainAspectRatio: false,
+
+      plugins: {
+        legend: { display: false }, // ocultar leyenda
+      },
+
+      scales: {
+        x: {
+          grid:  { color: "#252b3b" },
+          ticks: { color: "#7a849e", callback: v => formatEuros(v) }
+        },
+        y: {
+          grid:  { display: false },
+          ticks: { color: "#e8ecf5", font: { size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+
+/* =========================================================
+   GRÁFICO 4: D3.JS — Línea de tendencia
+   ========================================================= */
+function dibujarD3Linea() {
+  const svgEl  = document.getElementById("d3-linea");
+  const W      = svgEl.clientWidth || 800;
+  const H      = 300;
+  const margen = { top: 20, right: 20, bottom: 40, left: 40 };
+
+  // Convertir strings de fecha a objetos Date
+  const datos = datosTendencia.map(d => ({
+    fecha: new Date(d.Date),
+    valor: d.count
+  }));
+
+  // Escalas: mapean datos → píxeles
+  const escalaX = d3.scaleTime()
+    .domain(d3.extent(datos, d => d.fecha))           // rango de fechas
+    .range([margen.left, W - margen.right]);           // rango de píxeles
+
+  const escalaY = d3.scaleLinear()
+    .domain([0, d3.max(datos, d => d.valor) * 1.1])   // de 0 al máximo (+10%)
+    .range([H - margen.bottom, margen.top]);           // invertido: abajo=0
+
+  const svg = d3.select(svgEl).attr("viewBox", `0 0 ${W} ${H}`);
+
+  // Eje X (fechas)
+  svg.append("g")
+    .attr("transform", `translate(0, ${H - margen.bottom})`)
+    .call(d3.axisBottom(escalaX).ticks(6).tickFormat(d3.timeFormat("%b %y")));
+
+  // Eje Y (números)
+  svg.append("g")
+    .attr("transform", `translate(${margen.left}, 0)`)
+    .call(d3.axisLeft(escalaY).ticks(5));
+
+  // Área rellena bajo la línea (opcional, da profundidad)
+  const area = d3.area()
+    .x(d => escalaX(d.fecha))
+    .y0(H - margen.bottom)
+    .y1(d => escalaY(d.valor))
+    .curve(d3.curveCatmullRom); // curva suave
+
+  svg.append("path")
+    .datum(datos)
+    .attr("fill", "#4f8ef7")
+    .attr("opacity", 0.15)
+    .attr("d", area);
+
+  // Línea principal
+  // EDITAR: cambia el color en attr("stroke", ...)
+  const linea = d3.line()
+    .x(d => escalaX(d.fecha))
+    .y(d => escalaY(d.valor))
+    .curve(d3.curveCatmullRom);
+
+  svg.append("path")
+    .datum(datos)
+    .attr("fill", "none")
+    .attr("stroke", "#4f8ef7")  // ← color de la línea
+    .attr("stroke-width", 2)    // ← grosor de la línea
+    .attr("d", linea);
+
+  // Puntos sobre la línea (uno cada 7 días para no saturar)
+  // EDITAR: quita el .filter(...) para mostrar todos los puntos
+  svg.selectAll("circle")
+    .data(datos.filter((d, i) => i % 7 === 0))
+    .enter()
+    .append("circle")
+    .attr("cx", d => escalaX(d.fecha))
+    .attr("cy", d => escalaY(d.valor))
+    .attr("r", 4)               // ← tamaño del punto
+    .attr("fill", "#4f8ef7")    // ← color del punto
+    .attr("stroke", "#0d0f14")
+    .attr("stroke-width", 2);
+}
+
+
+/* =========================================================
+   ARRANQUE: llamar a todas las funciones al cargar la página
+   ========================================================= */
+window.addEventListener("DOMContentLoaded", () => {
+  dibujarKPIs();
+  dibujarCanvasBarras();
+  dibujarSVGDonut();
+  dibujarChartJSBarras();
+  dibujarD3Linea();
+});
+
+</script>
+</body>
+</html>
