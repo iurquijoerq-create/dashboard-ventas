@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Dashboard · Ventas E-Commerce</title>
 
-  <!-- Librerías externas (no tocar) -->
+  <!-- Librerías externas -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 
@@ -31,7 +31,7 @@
     header h1 { font-size: 1.6rem; margin: 0 0 6px; }
     header p  { color: #7a849e; margin: 0 0 16px; font-size: 0.9rem; }
 
-    /* ── Autores ── */
+    /* ── Autor ── */
     .autores { display: flex; gap: 12px; flex-wrap: wrap; }
     .autor {
       background: #1e2535;
@@ -88,7 +88,7 @@
 <body>
 
 <!-- =========================================================
-     CABECERA CON AUTORES
+     CABECERA
      ========================================================= -->
 <header>
   <h1>Análisis de Ventas E-Commerce</h1>
@@ -100,7 +100,7 @@
 </header>
 
 <!-- =========================================================
-     KPIs (resumen numérico en la parte superior)
+     KPIs 
      ========================================================= -->
 <div class="kpis">
   <div class="kpi"><div class="label">Ventas totales</div><div class="valor" id="kpi-total">–</div></div>
@@ -134,7 +134,7 @@
     <svg id="svg-donut" width="100%" height="280"></svg>
   </div>
 
-  <!-- Gráfico 3: Chart.js (ancho completo) -->
+  <!-- Gráfico 3: Chart.js -->
   <div class="card card-ancha">
     <h2>Top 5 Productos por Ingresos</h2>
     <div class="meta">
@@ -146,7 +146,7 @@
     </div>
   </div>
 
-  <!-- Gráfico 4: D3.js (ancho completo) -->
+  <!-- Gráfico 4: D3.js -->
   <div class="card card-ancha">
     <h2>Tendencia de Pedidos Diarios</h2>
     <div class="meta">
@@ -156,7 +156,7 @@
     <svg id="d3-linea" style="width:100%; height:300px;"></svg>
   </div>
 
-</div><!-- /grid -->
+</div>
 
 
 <!-- =========================================================
@@ -166,10 +166,9 @@
 
 /* =========================================================
    DATOS
-   Aquí puedes cambiar los valores, añadir o quitar filas.
    ========================================================= */
 
-// Ventas por categoría (gráfico Canvas y KPIs)
+// Ventas por categoría
 const datosVentas = [
   { categoria: "Alimentación", ventas: 32147 },
   { categoria: "Belleza",      ventas: 76265 },
@@ -196,7 +195,6 @@ const datosTop = [
 ];
 
 // Tendencia de pedidos diarios (gráfico D3)
-// Solo usamos los últimos 3 meses para que sea más legible
 const datosTendencia = [
   {"Date":"2026-01-01","count":15},{"Date":"2026-01-02","count":10},{"Date":"2026-01-03","count":12},{"Date":"2026-01-04","count":7},{"Date":"2026-01-05","count":71},{"Date":"2026-01-06","count":55},{"Date":"2026-01-07","count":40},{"Date":"2026-01-08","count":42},{"Date":"2026-01-09","count":18},{"Date":"2026-01-10","count":8},{"Date":"2026-01-11","count":11},{"Date":"2026-01-12","count":12},{"Date":"2026-01-13","count":10},{"Date":"2026-01-14","count":12},{"Date":"2026-01-15","count":12},{"Date":"2026-01-16","count":14},{"Date":"2026-01-17","count":13},{"Date":"2026-01-18","count":17},{"Date":"2026-01-19","count":13},{"Date":"2026-01-20","count":17},{"Date":"2026-01-21","count":10},{"Date":"2026-01-22","count":10},{"Date":"2026-01-23","count":12},{"Date":"2026-01-24","count":10},{"Date":"2026-01-25","count":11},{"Date":"2026-01-26","count":14},{"Date":"2026-01-27","count":10},{"Date":"2026-01-28","count":8},{"Date":"2026-01-29","count":15},{"Date":"2026-01-30","count":11},{"Date":"2026-01-31","count":13},
   {"Date":"2026-02-01","count":13},{"Date":"2026-02-02","count":21},{"Date":"2026-02-03","count":14},{"Date":"2026-02-04","count":17},{"Date":"2026-02-05","count":8},{"Date":"2026-02-06","count":11},{"Date":"2026-02-07","count":13},{"Date":"2026-02-08","count":21},{"Date":"2026-02-09","count":10},{"Date":"2026-02-10","count":11},{"Date":"2026-02-11","count":14},{"Date":"2026-02-12","count":9},{"Date":"2026-02-13","count":11},{"Date":"2026-02-14","count":4},{"Date":"2026-02-15","count":11},{"Date":"2026-02-16","count":18},{"Date":"2026-02-17","count":11},{"Date":"2026-02-18","count":11},{"Date":"2026-02-19","count":17},{"Date":"2026-02-20","count":10},{"Date":"2026-02-21","count":13},{"Date":"2026-02-22","count":17},{"Date":"2026-02-23","count":17},{"Date":"2026-02-24","count":14},{"Date":"2026-02-25","count":8},{"Date":"2026-02-26","count":20},{"Date":"2026-02-27","count":9},{"Date":"2026-02-28","count":18},
@@ -205,8 +203,6 @@ const datosTendencia = [
 
 /* =========================================================
    COLORES
-   Cambia estos valores para cambiar los colores de todos
-   los gráficos a la vez.
    ========================================================= */
 const COLORES = [
   "#4f8ef7", // azul
@@ -220,7 +216,7 @@ const COLORES = [
 
 
 /* =========================================================
-   FUNCIÓN AUXILIAR: formatear números como euros
+  NÚMEROS COMO EUROS
    ========================================================= */
 function formatEuros(valor) {
   if (valor >= 1000000) return (valor / 1000000).toFixed(2) + "M€";
@@ -262,7 +258,7 @@ function dibujarCanvasBarras() {
 
   const maxValor = Math.max(...datosVentas.map(d => d.ventas));
   const n        = datosVentas.length;
-  const anchoBarra = anchoGrafico / n - 8; // 8px de hueco entre barras
+  const anchoBarra = anchoGrafico / n - 8;
 
   // Líneas horizontales de referencia
   ctx.strokeStyle = "#252b3b";
@@ -284,7 +280,7 @@ function dibujarCanvasBarras() {
     const x      = margen.left + i * (anchoBarra + 8);
     const altura = (d.ventas / maxValor) * altoGrafico;
     const y      = margen.top + altoGrafico - altura;
-    const color  = COLORES[i % COLORES.length]; // color del array COLORES
+    const color  = COLORES[i % COLORES.length];
 
     // Relleno de la barra
     ctx.fillStyle = color;
@@ -313,11 +309,11 @@ function dibujarSVGDonut() {
   const R      = 90;           // radio exterior
   const r      = 50;           // radio interior (hueco)
 
-  // Colores del donut — EDITAR aquí para cambiar colores
+  // Colores del donut
   const coloresDonut = ["#4f8ef7", "#f74f7c"];
 
   const total = datosGenero.reduce((s, d) => s + d.total, 0);
-  let anguloInicio = -Math.PI / 2; // empezar desde arriba
+  let anguloInicio = -Math.PI / 2; 
   let html = "";
 
   datosGenero.forEach((d, i) => {
@@ -380,7 +376,7 @@ function dibujarChartJSBarras() {
         label: "Ingresos (€)",
         data: datosTop.map(d => d.valor),  // valores
 
-        // EDITAR: colores de las barras
+        // Colores de las barras
         backgroundColor: COLORES.slice(0, datosTop.length).map(c => c + "bb"),
         borderColor:     COLORES.slice(0, datosTop.length),
         borderWidth: 1,
@@ -389,14 +385,14 @@ function dibujarChartJSBarras() {
     },
 
     options: {
-      // "y" → barras horizontales | "x" → barras verticales (por defecto)
+      // "y" → barras horizontales | "x" → barras verticales
       indexAxis: "y",
 
       responsive: true,
       maintainAspectRatio: false,
 
       plugins: {
-        legend: { display: false }, // ocultar leyenda
+        legend: { display: true }, 
       },
 
       scales: {
@@ -464,7 +460,6 @@ function dibujarD3Linea() {
     .attr("d", area);
 
   // Línea principal
-  // EDITAR: cambia el color en attr("stroke", ...)
   const linea = d3.line()
     .x(d => escalaX(d.fecha))
     .y(d => escalaY(d.valor))
@@ -473,27 +468,26 @@ function dibujarD3Linea() {
   svg.append("path")
     .datum(datos)
     .attr("fill", "none")
-    .attr("stroke", "#4f8ef7")  // ← color de la línea
-    .attr("stroke-width", 2)    // ← grosor de la línea
+    .attr("stroke", "#4f8ef7")  // color de la línea
+    .attr("stroke-width", 2)    // grosor de la línea
     .attr("d", linea);
 
-  // Puntos sobre la línea (uno cada 7 días para no saturar)
-  // EDITAR: quita el .filter(...) para mostrar todos los puntos
+  // Puntos sobre la línea 
   svg.selectAll("circle")
     .data(datos.filter((d, i) => i % 7 === 0))
     .enter()
     .append("circle")
     .attr("cx", d => escalaX(d.fecha))
     .attr("cy", d => escalaY(d.valor))
-    .attr("r", 4)               // ← tamaño del punto
-    .attr("fill", "#4f8ef7")    // ← color del punto
+    .attr("r", 4)               // tamaño del punto
+    .attr("fill", "#4f8ef7")    // color del punto
     .attr("stroke", "#0d0f14")
     .attr("stroke-width", 2);
 }
 
 
 /* =========================================================
-   ARRANQUE: llamar a todas las funciones al cargar la página
+   Funciones
    ========================================================= */
 window.addEventListener("DOMContentLoaded", () => {
   dibujarKPIs();
